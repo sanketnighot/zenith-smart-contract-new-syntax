@@ -3,25 +3,30 @@ import smartpy as sp  # type: ignore
 
 @sp.module
 def vmm_types():
-    vmm_type: type = sp.record(
-        asset_amount=sp.int, token_amount=sp.int, invariant=sp.int
-    )
 
     administration_panel_type: type = sp.record(
         administrator=sp.address,
-        pending_administrator=sp.option[sp.address],
-        fund_manager=sp.address,
-        position_operators=sp.set[sp.address],
-        paused=sp.bool,
+        pendingAdministrator=sp.option[sp.address],
+        positionManagers=sp.set[sp.address],
+        fundManager=sp.address,
+    )
+
+    positions_value: type = sp.record(
+        position=sp.int,
+        entry_price=sp.int,
+        funding_amount=sp.int,
+        position_value=sp.int,
+        collateral_amount=sp.int,
+        usd_amount=sp.int,
     )
 
     pending_positions_type: type = sp.map[
         sp.address,
         sp.record(
             direction=sp.int,
-            token_amount=sp.int,
-            leverage_multiple=sp.int,
-            execution_price=sp.int,
+            tokenAmount=sp.int,
+            leverageMultiple=sp.int,
+            executionPrice=sp.int,
         ),
     ]
 
@@ -29,16 +34,16 @@ def vmm_types():
         sp.address,
         sp.record(
             direction=sp.int,
-            entry_price=sp.int,
-            position_amount=sp.int,
-            collateral_amount=sp.int,
-            funding_amount=sp.int,
-            token_amount=sp.int,
+            entryPrice=sp.int,
+            positionAmount=sp.int,
+            collateralAmount=sp.int,
+            fundingAmount=sp.int,
+            tokenAmount=sp.int,
         ),
     ]
 
     create_order_type: type = sp.record(
         direction=sp.int,
-        token_amount=sp.int,
-        leverage_multiple=sp.int,
+        tokenAmount=sp.int,
+        leverageMultiple=sp.int,
     )

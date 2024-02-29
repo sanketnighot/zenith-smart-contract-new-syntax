@@ -152,6 +152,7 @@ cython_debug/
 #.idea/
 
 
-test_outputs/
+/test_outputs/
+/vmm_test/
 
 .DS_Store

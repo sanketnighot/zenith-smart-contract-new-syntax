@@ -24,3 +24,4 @@ ben = sp.address("tz1ooBEN")
 # Contract addresses
 oracle = sp.address("KT1ooORACLE")
 usdt = sp.address("KT1ooUSDT")
+eth = sp.address("KT1ooETH")
