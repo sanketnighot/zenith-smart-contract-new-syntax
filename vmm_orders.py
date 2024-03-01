@@ -30,8 +30,81 @@ def orders():
             # Decimal amount of contract
             self.data.decimal_amount = sp.cast(1_000_000, sp.int)
             # Status of the contract (0: notInitialized, 1: active, 2: closeOnly, 3: paused)
-            self.data.status = sp.cast(0, sp.int)
+            self.data.status = sp.cast(1, sp.int)
 
+        @sp.private(with_storage="read-only")
+        def _isAdmin(self):
+            assert sp.sender == self.data.administration_panel.administrator, "NotAdmin"
+
+        @sp.private(with_storage="read-only")
+        def _isPositionManager(self):
+            assert self.data.administration_panel.positionManagers.contains(
+                sp.sender
+            ), "NotPositionManager"
+
+        @sp.private(with_storage="read-only")
+        def _checkStatus(self, statusCode):
+            sp.cast(statusCode, sp.int)
+            assert self.data.status == statusCode, "InvalidStatus"
+
+        # Update Admin
+        @sp.entrypoint
+        def proposeAdmin(self, newAdminAddress):
+            sp.cast(newAdminAddress, sp.address)
+            self._isAdmin()
+            self.data.administration_panel.pendingAdministrator = sp.Some(
+                newAdminAddress
+            )
+
+        # Verify Admin
+        @sp.entrypoint
+        def updateAdmin(self):
+            assert (
+                self.data.administration_panel.pendingAdministrator.is_some()
+            ), "NoPendingAdministrator"
+            assert (
+                sp.sender
+                == self.data.administration_panel.pendingAdministrator.unwrap_some()
+            ), "NotAuthorized"
+            self.data.administration_panel.administrator = (
+                self.data.administration_panel.pendingAdministrator.unwrap_some()
+            )
+            self.data.administration_panel.pendingAdministrator = None
+
+        # Update Status
+        @sp.entrypoint
+        def update_status(self, new_status_code):
+            self._isAdmin()
+            sp.cast(new_status_code, sp.int)
+            self.data.status = new_status_code
+
+        # Add Position Manager
+        @sp.entrypoint
+        def add_position_manager(self, position_manager):
+            sp.cast(position_manager, sp.address)
+            self._isAdmin()
+            self.data.administration_panel.positionManagers.add(position_manager)
+
+        # Remove Position Manager
+        @sp.entrypoint
+        def remove_position_manager(self, position_manager):
+            sp.cast(position_manager, sp.address)
+            self._isAdmin()
+            assert self.data.administration_panel.positionManagers.contains(
+                position_manager
+            ), "NotAPositionManager"
+            self.data.administration_panel.positionManagers.remove(position_manager)
+
+        # Update Decimal
+        @sp.entrypoint
+        def updateDecimal(self, decimal, decimal_amount):
+            self._isAdmin()
+            sp.cast(decimal, sp.int)
+            self.data.decimal = decimal
+            sp.cast(decimal_amount, sp.int)
+            self.data.decimal_amount = decimal_amount
+
+        # Create Order
         @sp.entrypoint
         def createOrder(self, params):
             sp.cast(params, vmm_types.create_order_type)
