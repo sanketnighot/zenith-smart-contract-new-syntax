@@ -154,5 +154,6 @@ cython_debug/
 
 /test_outputs/
 /vmm_test/
+/vmm_orders/
 
 .DS_Store

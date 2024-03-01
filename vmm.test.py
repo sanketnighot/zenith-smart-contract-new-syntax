@@ -115,6 +115,7 @@ if __name__ == "__main__":
         sc.h2("Testing Increase Position")
         vmm_contract.increasePosition(
             sp.record(
+                position_holder=Address.alice,
                 direction=sp.int(1),
                 usd_amount=sp.int(2000000000),
                 leverage_multiple=sp.int(2),
@@ -124,6 +125,7 @@ if __name__ == "__main__":
 
         vmm_contract.increasePosition(
             sp.record(
+                position_holder=Address.bob,
                 direction=sp.int(2),
                 usd_amount=sp.int(2000000000),
                 leverage_multiple=sp.int(3),
@@ -137,8 +139,8 @@ if __name__ == "__main__":
         vmm_contract.distributeFunding(_sender=Address.alice, _now=sp.timestamp(3620))
 
         sc.h2("Testing Close Position")
-        vmm_contract.closePosition(_sender=Address.alice)
-        vmm_contract.closePosition(_sender=Address.bob)
+        vmm_contract.closePosition(Address.alice, _sender=Address.alice)
+        vmm_contract.closePosition(Address.bob, _sender=Address.bob)
 
         sc.show(vmm_contract.data.vmm)
         sc.show(usdt_token.data.ledger)
