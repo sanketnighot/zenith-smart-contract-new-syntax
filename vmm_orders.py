@@ -58,19 +58,3 @@ def orders():
             assert self.data.orders.contains(order_id), "Order does not exist"
             # TODO: Execute order code
             self.data.orders[order_id].order_status = 1
-
-
-if __name__ == "__main__":
-
-    @sp.add_test()
-    def test():
-        sc = sp.test_scenario("vmm_orders", [vmm_types, sp.utils, orders])
-        sc.h1("VMM Orders Contract")
-
-        sc.h2("Originate Orders Contract")
-        vmm_orders = orders.VmmOrders(
-            metadata=sp.scenario_utils.metadata_of_url("https://example.com"),
-            administrator=Address.admin,
-            fund_manager=Address.elon,
-        )
-        sc += vmm_orders

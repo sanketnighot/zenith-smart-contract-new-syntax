@@ -1,6 +1,7 @@
 import smartpy as sp  # type: ignore
 from USDt import usdt
-from vmm_contract import vmm  # type: ignore
+from vmm_contract import vmm
+from vmm_orders import orders
 import utilities.Address as Address
 from utilities.FA2 import fa2
 from utilities.Helpers import helpers
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     @sp.add_test()
     def test():
         sc = sp.test_scenario(
-            "vmm_test", [vmm_types, sp.utils, oracle, fa2, usdt, helpers, vmm]
+            "vmm_test", [vmm_types, sp.utils, oracle, fa2, usdt, helpers, vmm, orders]
         )
         sc.h1("VMM Contract")
 
@@ -39,9 +40,13 @@ if __name__ == "__main__":
         )
         sc += vmm_contract
 
-        # sc.h2("Testing Toggle Pause")
-        # vmm_contract.togglePause(_sender=Address.alice)
-        # vmm_contract.togglePause(_sender=Address.alice)
+        sc.h2("Originate Orders Contract")
+        vmm_orders = orders.VmmOrders(
+            metadata=sp.scenario_utils.metadata_of_url("https://example.com"),
+            administrator=Address.admin,
+            fund_manager=Address.elon,
+        )
+        sc += vmm_orders
 
         sc.h2("Testing Propose Admin")
         vmm_contract.proposeAdmin(Address.admin, _sender=Address.alice)
