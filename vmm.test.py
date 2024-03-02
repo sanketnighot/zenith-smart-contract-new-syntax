@@ -56,6 +56,9 @@ if __name__ == "__main__":
         sc.h2("Testing Set VMM")
         vmm_contract.setVmm(12500000000, _sender=Address.admin)
 
+        sc.h2("Testing Set Position Manager")
+        vmm_contract.addPositionManager(vmm_orders.address, _sender=Address.admin)
+
         usdt_token.mint(
             sp.record(
                 amount=sp.nat(1000000000000),
@@ -136,6 +139,7 @@ if __name__ == "__main__":
                 leverage_multiple=sp.int(3),
             ),
             _sender=Address.bob,
+            _valid=False,
         )
 
         oracle_contract.updatePrice(8000000, _now=sp.timestamp(3618))
@@ -145,7 +149,40 @@ if __name__ == "__main__":
 
         sc.h2("Testing Close Position")
         vmm_contract.closePosition(Address.alice, _sender=Address.alice)
-        vmm_contract.closePosition(Address.bob, _sender=Address.bob)
+        vmm_contract.closePosition(Address.bob, _sender=Address.bob, _valid=False)
 
-        sc.show(vmm_contract.data.vmm)
+        sc.show(vmm_contract.data)
+        sc.show(usdt_token.data.ledger)
+
+        # Create Order
+        sc.h2("Testing Create Order")
+        vmm_orders.createOrder(
+            sp.record(
+                position_holder=Address.alice,
+                vmm_address=vmm_contract.address,
+                order_type=sp.int(0),
+                trigger_price=sp.int(0),
+                limit_price=sp.int(0),
+                amount_in=sp.int(2000000000),
+                leverage_multiple=sp.int(2),
+                direction=sp.int(1),
+                stop_trigger_price=None,
+                stop_limit_price=None,
+                take_trigger_price=None,
+                take_limit_price=None,
+                expiration=sp.int(0),
+                order_status=sp.int(0),
+            ),
+            _sender=Address.alice,
+        )
+
+        sc.show(vmm_contract.data)
+        sc.show(usdt_token.data.ledger)
+
+        # Close Order
+        sc.h2("Testing Close Order")
+        vmm_orders.executeCloseOrder(0, _sender=Address.alice)
+        vmm_orders.executeCloseOrder(0, _sender=Address.alice, _valid=False)
+
+        sc.show(vmm_contract.data)
         sc.show(usdt_token.data.ledger)

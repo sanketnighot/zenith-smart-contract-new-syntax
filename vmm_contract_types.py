@@ -43,7 +43,8 @@ def vmm_types():
     ]
 
     create_order_type: type = sp.record(
-        vmm_address=sp.string,
+        position_holder=sp.address,
+        vmm_address=sp.address,
         order_type=sp.int,  # 0: Market, 1: Limit
         trigger_price=sp.int,
         limit_price=sp.int,
@@ -55,5 +56,5 @@ def vmm_types():
         take_trigger_price=sp.option[sp.int],
         take_limit_price=sp.option[sp.int],
         expiration=sp.int,
-        order_status=sp.int,  # 0: pending, 1: executed, 2: canceled
+        order_status=sp.int,  # 0: pending, 1: active, 2: canceled
     )

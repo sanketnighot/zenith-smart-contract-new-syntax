@@ -97,21 +97,21 @@ def vmm():
 
         # Update Status
         @sp.entrypoint
-        def update_status(self, new_status_code):
+        def updateStatus(self, new_status_code):
             self._isAdmin()
             sp.cast(new_status_code, sp.int)
             self.data.status = new_status_code
 
         # Add Position Manager
         @sp.entrypoint
-        def add_position_manager(self, position_manager):
+        def addPositionManager(self, position_manager):
             sp.cast(position_manager, sp.address)
             self._isAdmin()
             self.data.administration_panel.positionManagers.add(position_manager)
 
         # Remove Position Manager
         @sp.entrypoint
-        def remove_position_manager(self, position_manager):
+        def removePositionManager(self, position_manager):
             sp.cast(position_manager, sp.address)
             self._isAdmin()
             assert self.data.administration_panel.positionManagers.contains(
@@ -121,7 +121,7 @@ def vmm():
 
         #  Update Fund Manager
         @sp.entrypoint
-        def update_fund_manager(self, new_fund_manager):
+        def updateFundManager(self, new_fund_manager):
             sp.cast(new_fund_manager, sp.address)
             self._isAdmin()
             self.data.administration_panel.fundManager = new_fund_manager
@@ -184,6 +184,7 @@ def vmm():
                 usd_amount=usd_amount,
                 invariant=sp.mul(token_amount, usd_amount) / self.data.decimal,
             )
+            self.data.status = sp.int(1)
 
             self.data.current_mark_price = (
                 self.data.vmm.usd_amount * self.data.decimal
@@ -313,6 +314,8 @@ def vmm():
             sp.cast(usd_amount, sp.int)
             sp.cast(leverage_multiple, sp.int)
 
+            self._checkStatus(1)
+            self._isPositionManager()
             assert direction == sp.int(1) or direction == sp.int(2), "INVALID_DIRECTION"
             assert usd_amount >= sp.int(0) * self.data.decimal, "INVALID_USD_AMOUNT"
             assert (
@@ -505,6 +508,8 @@ def vmm():
             sp.cast(position_holder, sp.address)
             sp.cast(leverage_multiple, sp.int)
             sp.cast(usd_amount, sp.int)
+            self._checkStatus(1)
+            self._isPositionManager()
             assert self.data.positions.contains(position_holder), "POSITION_NOT_FOUND"
             assert leverage_multiple > 0, "LEVERAGE_MULTIPLE_INVALID"
             assert usd_amount > 0, "POSITION_AMOUNT_INVALID"
@@ -621,10 +626,10 @@ def vmm():
         @sp.entrypoint
         def closePosition(self, position_holder):
             sp.cast(position_holder, sp.address)
-
-            assert self.data.positions.contains(position_holder), "POSITION_NOT_FOUND"
+            assert self.data.status == 1 or self.data.status == 2, "InvalidStatus"
+            assert self.data.positions.contains(position_holder), "InvalidPosition"
+            self._isPositionManager()
             self.updateIndexPrice()
-
             if self.data.positions[position_holder].position == 1:
                 position_value = self.data.vmm.usd_amount - (
                     self.data.vmm.invariant
@@ -711,7 +716,8 @@ def vmm():
         def addMargin(self, position_holder, amount):
             sp.cast(amount, sp.int)
             sp.cast(position_holder, sp.address)
-
+            self._checkStatus(1)
+            self._isPositionManager()
             self.updateIndexPrice()
             amount1 = amount - (amount * self.data.transaction_fees) / 100
             self.transferUsd(
@@ -742,7 +748,8 @@ def vmm():
         def removeMargin(self, position_holder, amount):
             sp.cast(amount, sp.int)
             sp.cast(position_holder, sp.address)
-
+            self._checkStatus(1)
+            self._isPositionManager()
             self.updateIndexPrice()
             margin_ratio = (
                 (self.data.positions[position_holder].collateral_amount - amount)
@@ -772,6 +779,8 @@ def vmm():
         @sp.entrypoint
         def liquidate(self, position_holder):
             sp.cast(position_holder, sp.address)
+            self._checkStatus(1)
+            self._isPositionManager()
             self.updateIndexPrice()
             if self.data.positions[position_holder].position == 1:
                 position_value = self.data.vmm.usd_amount - (
@@ -878,4 +887,58 @@ def vmm():
                     del self.data.positions[position_holder]
             sp.emit(
                 sp.record(position_holder=position_holder), tag="POSITION_LIQUIDATED"
+            )
+
+        # Take Profit
+        @sp.entrypoint
+        def takeProfit(self, position_holder):
+            sp.cast(position_holder, sp.address)
+            self._checkStatus(1)
+            self._isPositionManager()
+            self.updateIndexPrice()
+            self.transferUsd(
+                sp.record(
+                    sender_=position_holder,
+                    receiver_=sp.self_address(),
+                    amount_=abs(self.data.positions[position_holder].funding_amount),
+                )
+            )
+            self.data.positions[position_holder].funding_amount = sp.int(0)
+
+        # Views
+
+        # Get Position View
+        @sp.onchain_view()
+        def getPositionData(self, position_holder):
+            sp.cast(position_holder, sp.address)
+            return self.data.positions[position_holder]
+
+        # Get VMM View
+        @sp.onchain_view()
+        def getVmmData(self):
+            return self.data.vmm
+
+        # Get Index and Mark Price View
+        @sp.onchain_view()
+        def getIndexAndMarkPrice(self):
+            return sp.record(
+                index_price=self.data.current_index_price,
+                mark_price=self.data.current_mark_price,
+            )
+
+        # Get Funding Rate View
+        @sp.onchain_view()
+        def getFundingRate(self):
+            return sp.record(
+                long_funding_rate=self.data.long_funding_rate,
+                short_funding_rate=self.data.short_funding_rate,
+            )
+
+        #  Get Funding Period Data View
+        @sp.onchain_view()
+        def getFundingPeriodData(self):
+            return sp.record(
+                funding_period=self.data.funding_period,
+                previous_funding_time=self.data.previous_funding_time,
+                upcoming_funding_time=self.data.upcoming_funding_time,
             )
