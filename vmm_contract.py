@@ -198,12 +198,12 @@ def vmm():
         #  Distribute Funding
         @sp.entrypoint
         def distributeFunding(self):
-
+            self._checkStatus(1)
             assert utils.seconds_of_timestamp(  # type: ignore
                 self.data.upcoming_funding_time
             ) <= utils.seconds_of_timestamp(  # type: ignore
                 sp.now
-            ), "FUNDING_NOT_DUE"  # type: ignore
+            ), "FUNDING_NOT_DUE"
             self.updateIndexPrice()
             self.data.current_mark_price = (
                 self.data.vmm.usd_amount * self.data.decimal
